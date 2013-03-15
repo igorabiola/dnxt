@@ -1,0 +1,378 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+    <title>Reference</title>
+    <link rel="stylesheet" href="../luadoc.css" type="text/css" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+</head>
+
+<body>
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+<div id="main">
+
+<div id="navigation">
+
+
+<h1>LuaDoc</h1>
+<ul>
+	
+	<li><a href="../index.html">Index</a></li>
+	
+</ul>
+
+
+<!-- Module list -->
+
+<h1>Modules</h1>
+<ul>
+
+	<li>
+		<a href="../modules/dnxt.html">dnxt</a>
+	</li>
+
+	<li>
+		<a href="../modules/dnxtClient.html">dnxtClient</a>
+	</li>
+
+	<li><strong>dnxtTripod</strong></li>
+	
+</ul>
+
+
+
+<!-- File list -->
+
+<h1>Files</h1>
+<ul>
+
+	<li>
+		<a href="../files/dnxt.html">dnxt.lua</a>
+	</li>
+
+	<li>
+		<a href="../files/dnxtClient.html">dnxtClient.lua</a>
+	</li>
+
+	<li>
+		<a href="../files/dnxtTripod.html">dnxtTripod.lua</a>
+	</li>
+
+</ul>
+
+
+
+
+
+
+</div><!-- id="navigation" -->
+
+<div id="content">
+
+<h1>Module <code>dnxtTripod</code></h1>
+
+<p>Módulo Auxiliar </p>
+
+
+
+<h2>Functions</h2>
+<table class="function_list">
+
+	<tr>
+	<td class="name" nowrap><a href="#back">back</a>&nbsp;(robotID, robot, mutexList)</td>
+	<td class="summary">Move o robô para trás.</td>
+	</tr>
+
+	<tr>
+	<td class="name" nowrap><a href="#forward">forward</a>&nbsp;(robotID, robot, mutexList)</td>
+	<td class="summary">Move o robô para frente.</td>
+	</tr>
+
+	<tr>
+	<td class="name" nowrap><a href="#move">move</a>&nbsp;(robotID, nxt, mutexList, x, y, tacho_limit, robot)</td>
+	<td class="summary">Move o robô baseado nos valores de x, y.</td>
+	</tr>
+
+	<tr>
+	<td class="name" nowrap><a href="#rotateLeft">rotateLeft</a>&nbsp;(robotID, robot, mutexList, degrees)</td>
+	<td class="summary">Rotaciona o robô para esquerda.</td>
+	</tr>
+
+	<tr>
+	<td class="name" nowrap><a href="#rotateRight">rotateRight</a>&nbsp;(robotID, robot, mutexList, degrees)</td>
+	<td class="summary">Rotaciona o robô para direita.</td>
+	</tr>
+
+	<tr>
+	<td class="name" nowrap><a href="#stop">stop</a>&nbsp;(robotID, robot, mutexList)</td>
+	<td class="summary">Para o robô.</td>
+	</tr>
+
+</table>
+
+
+
+
+
+
+<br/>
+<br/>
+
+
+
+<h2><a name="functions"></a>Functions</h2>
+<dl class="function">
+
+
+
+<dt><a name="back"></a><strong>back</strong>&nbsp;(robotID, robot, mutexList)</dt>
+<dd>
+Move o robô para trás.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  robotID: id do robo sobre o qual a func de ser chamada.
+	</li>
+	
+	<li>
+	  robot: objto LuaNxt.
+	</li>
+	
+	<li>
+	  mutexList: lista de objetos de exclução mútua.
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="forward"></a><strong>forward</strong>&nbsp;(robotID, robot, mutexList)</dt>
+<dd>
+Move o robô para frente.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  robotID: id do robo sobre o qual a func de ser chamada.
+	</li>
+	
+	<li>
+	  robot: objto LuaNxt.
+	</li>
+	
+	<li>
+	  mutexList: lista de objetos de exclução mútua.
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="move"></a><strong>move</strong>&nbsp;(robotID, nxt, mutexList, x, y, tacho_limit, robot)</dt>
+<dd>
+Move o robô baseado nos valores de x, y.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  robotID: id do robo sobre o qual a func de ser chamada.
+	</li>
+	
+	<li>
+	  nxt: 
+	</li>
+	
+	<li>
+	  mutexList: lista de objetos de exclução mútua.
+	</li>
+	
+	<li>
+	  x: componence x do movimento, deve varias entre -128 e 128.
+	</li>
+	
+	<li>
+	  y: componence y do movimento, deve varias entre -128 e 128.
+	</li>
+	
+	<li>
+	  tacho_limit: limite de rotações, 0 para ilimitado.
+	</li>
+	
+	<li>
+	  robot: objto LuaNxt.
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="rotateLeft"></a><strong>rotateLeft</strong>&nbsp;(robotID, robot, mutexList, degrees)</dt>
+<dd>
+Rotaciona o robô para esquerda.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  robotID: id do robo sobre o qual a func de ser chamada.
+	</li>
+	
+	<li>
+	  robot: objto LuaNxt.
+	</li>
+	
+	<li>
+	  mutexList: lista de objetos de exclução mútua.
+	</li>
+	
+	<li>
+	  degrees: ângulo de rotação.
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="rotateRight"></a><strong>rotateRight</strong>&nbsp;(robotID, robot, mutexList, degrees)</dt>
+<dd>
+Rotaciona o robô para direita.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  robotID: id do robo sobre o qual a func de ser chamada.
+	</li>
+	
+	<li>
+	  robot: objto LuaNxt.
+	</li>
+	
+	<li>
+	  mutexList: lista de objetos de exclução mútua.
+	</li>
+	
+	<li>
+	  degrees: ângulo de rotação.
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="stop"></a><strong>stop</strong>&nbsp;(robotID, robot, mutexList)</dt>
+<dd>
+Para o robô.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  robotID: id do robo sobre o qual a func de ser chamada.
+	</li>
+	
+	<li>
+	  robot: objto LuaNxt.
+	</li>
+	
+	<li>
+	  mutexList: lista de objetos de exclução mútua.
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+</dl>
+
+
+
+
+
+
+</div> <!-- id="content" -->
+
+</div> <!-- id="main" -->
+
+<div id="about">
+	<p><a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0!" height="31" width="88" /></a></p>
+</div> <!-- id="about" -->
+
+</div> <!-- id="container" -->	
+</body>
+</html>

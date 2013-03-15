@@ -1,0 +1,1017 @@
+-------------------------------------------------------------------------------
+-- LuaNXT Functions
+-- @release 0.2
+-------------------------------------------------------------------------------
+
+local lnxtcore = require("lnxt.core")
+local lnxtusb  = require("lnxt.usb")
+local lnxtbt   = require("lnxt.bluetooth")
+
+module("lnxt", package.seeall)
+
+-------------------------------------------------------------------------------
+-- Nxt USB configuration
+-- @class table
+-- @name lnxt.usbconf
+-- @field OUT_ENDP    output endpoint 
+-- @field IN_ENDP     input endpoint
+-- @field TIMEOUT     timeout after a command
+-- @field INTERFACE   selected interface
+-- @field iVendor     vendor id  
+-- @field iProduct    product id 
+usbconf = {
+    OUT_ENDP  = 0x01    ,
+    IN_ENDP   = 0x82    ,
+    TIMEOUT   = 10000   ,
+    INTERFACE = 0       ,
+    iVendor   = 0x0694  ,
+    iProduct  = 0x0002  
+}
+
+-------------------------------------------------------------------------------
+-- Nxt output ports
+-- @class table
+-- @name lnxt.output_port
+-- @field PORT_A    output port A
+-- @field PORT_B    output port B
+-- @field PORT_C    output port C
+-- @field PORT_ALL  All output ports
+output_port = {
+    PORT_A    = 0x00,
+    PORT_B    = 0x01,
+    PORT_C    = 0x02,
+    PORT_ALL  = 0xFF
+}
+
+-------------------------------------------------------------------------------
+-- Nxt input ports
+-- @class table
+-- @name lnxt.input_port
+-- @field PORT_1    input port 1
+-- @field PORT_2    input port 2
+-- @field PORT_3    input port 3
+-- @field PORT_4    input port 4
+input_port = {
+    PORT_1    = 0x00,
+    PORT_2    = 0x01,
+    PORT_3    = 0x02,
+    PORT_4    = 0x03
+}
+
+-------------------------------------------------------------------------------
+-- Nxt sensor types
+-- @class table
+-- @name lnxt.sensor_type
+-- @field NO_SENSOR            No sensor
+-- @field SWITCH               Switch sensor type
+-- @field TEMPERATURE          Temperature sensor
+-- @field REFLECTION           Reflection sensor
+-- @field ANGLE                Angle type
+-- @field LIGHT_ACTIVE         Light active
+-- @field LIGHT_INACTIVE       Light inactive
+-- @field SOUND_DB             Sound db
+-- @field SOUND_DBA            Sound dba
+-- @field CUSTOM               CUSTOM
+-- @field LOWSPEED             Low speed sensor
+-- @field LOWSPEED_9V          Low speed sensor 9v
+-- @field NO_OF_SENSOR_TYPES   Not listed
+sensor_type = {
+    NO_SENSOR              = 0x00,
+    SWITCH                 = 0x01,
+    TEMPERATURE            = 0x02,
+    REFLECTION             = 0x03,
+    ANGLE                  = 0x04,
+    LIGHT_ACTIVE           = 0x05,
+    LIGHT_INACTIVE         = 0x06,
+    SOUND_DB               = 0x07, 
+    SOUND_DBA              = 0x08,
+    CUSTOM                 = 0x09,
+    LOWSPEED               = 0x0A,
+    LOWSPEED_9V            = 0x0B,
+    NO_OF_SENSOR_TYPES     = 0x0C
+}
+
+-------------------------------------------------------------------------------
+-- Sensor Input mode
+-- @class table
+-- @name lnxt.input_mode
+-- @field RAWMODE            Raw mode
+-- @field BOOLEANMODE        Boolean mode
+-- @field TRANSITIONCNTMODE  Transition count mode
+-- @field PERIODCOUNTERMODE  Period counter mode
+-- @field PCTFULLSCALEMODE   PCT Full Scale ???
+-- @field CELCIUSMODE        Celcius mode
+-- @field FAHRENHEITMODE     Fahrenheit mode
+-- @field ANGLESTEPMODE      Angle step mode
+-- @field SLOPEMASK          Slope mask
+-- @field MODEMASK           Mode Mask
+input_mode = {
+    RAWMODE                = 0x00,
+    BOOLEANMODE            = 0x20,
+    TRANSITIONCNTMODE      = 0x40, 
+    PERIODCOUNTERMODE      = 0x60,
+    PCTFULLSCALEMODE       = 0x80,
+    CELCIUSMODE            = 0xA0,
+    FAHRENHEITMODE         = 0xC0,
+    ANGLESTEPMODE          = 0xE0,
+    SLOPEMASK              = 0x1F,
+    MODEMASK               = 0xE0
+}
+
+-------------------------------------------------------------------------------
+-- Port output mode
+-- @class table
+-- @name lnxt.output_mode
+-- @field MOTORON            Turn on the specified motor
+-- @field BRAKE              Brake
+-- @field REGULATED          Regulated
+-- @field MOTORON_REGULATED  Run regulated
+-- @field BRAKE_REGULATED    Brake regulated
+output_mode = {
+    MOTORON                 = 0x01,
+    BRAKE                   = 0x02,
+    REGULATED               = 0x04,
+    MOTORON_REGULATED       = 0x05,
+    BRAKE_REGULATED         = 0x06,
+    MOTORON_BRAKE_REGULATED = 0x07
+}
+
+-------------------------------------------------------------------------------
+-- Port output regulation mode
+-- @class table
+-- @name lnxt.regulation_mode
+-- @field IDLE          Idle
+-- @field MOTOR_SPEED   Speed
+-- @field MOTOR_SYNC    Synchoronous
+regulation_mode = {
+    IDLE                   = 0x00,
+    MOTOR_SPEED            = 0x01,  
+    MOTOR_SYNC             = 0x02,
+    MOTOR_SPEED_SYNC       = 0x03
+}
+
+-------------------------------------------------------------------------------
+-- Port output run state
+-- @class table
+-- @name lnxt.run_state
+-- @field IDLE          Idle
+-- @field RAMPUP        Ramp up
+-- @field RUNNING       Running
+-- @field RAMPDOWN      Ramp down
+run_state = {
+    IDLE                   = 0x00,
+    RAMPUP                 = 0x10,  
+    RUNNING                = 0x20,
+    RAMPDOWN               = 0x40  
+}
+
+-------------------------------------------------------------------------------
+-- Direct Command Code Representation
+-- @class table
+-- @name lnxt.direct_command
+-- @field NXT_STARTPROGRAM          Start program 
+-- @field NXT_STOPPROGRAM           Stop program
+-- @field NXT_PLAYSOUNDFILE         Play sound file 
+-- @field NXT_PLAYTONE              Play tone 
+-- @field NXT_SETOUTPUTSTATE        Set output State 
+-- @field NXT_SETINPUTMODE          Set input mode 
+-- @field NXT_GETOUTPUTSTATE        Get output state 
+-- @field NXT_GETINPUTVALUES        Get input values 
+-- @field NXT_RESETINPUTSCALEDVALUE Reset input scaled values
+-- @field NXT_MESSAGEWRITE          Message write 
+-- @field NXT_RESETMOTORPOSISTION   Reset motor position 
+-- @field NXT_GETBATTERYLEVEL       Get batteryl evel   
+-- @field NXT_STOPSOUNDPLAYBACK     Stop sound playback 
+-- @field NXT_KEEPALIVE             Keep alive         
+-- @field NXT_LSGETSTATUS           lsgetstatus       
+-- @field NXT_LSWRITE               lswrite           
+-- @field NXT_LSREAD                lsread            
+-- @field NXT_GETCURRENTPROGRAM     Get current program 
+-- @field NXT_MESSAGEREAD           Message read       
+direct_command = {
+    NXT_STARTPROGRAM           = 0x00,
+    NXT_STOPPROGRAM            = 0x01,
+    NXT_PLAYSOUNDFILE          = 0x02,
+    NXT_PLAYTONE               = 0x03,
+    NXT_SETOUTPUTSTATE         = 0x04,
+    NXT_SETINPUTMODE           = 0x05,
+    NXT_GETOUTPUTSTATE         = 0x06,
+    NXT_GETINPUTVALUES         = 0x07, 
+    NXT_RESETINPUTSCALEDVALUE  = 0x08,
+    NXT_MESSAGEWRITE           = 0x09,
+    NXT_RESETMOTORPOSISTION    = 0x0A,
+    NXT_GETBATTERYLEVEL        = 0x0B,
+    NXT_STOPSOUNDPLAYBACK      = 0x0C,
+    NXT_KEEPALIVE              = 0x0D,
+    NXT_LSGETSTATUS            = 0x0E,
+    NXT_LSWRITE                = 0x0F, 
+    NXT_LSREAD                 = 0x10,
+    NXT_GETCURRENTPROGRAM      = 0x11,
+    NXT_MESSAGEREAD            = 0x13
+}
+
+-------------------------------------------------------------------------------
+-- System Command Code Representation
+-- @class table
+-- @name lnxt.system_command
+-- @field NXT_GETFIRMWAREVERSION   Get firmware version
+-- @field NXT_BOOT                 Boot              
+-- @field NXT_SETBRICKNAME         Set brick name      
+-- @field NXT_GETDEVICEINFO        Get device information     
+system_command = {
+    NXT_GETFIRMWAREVERSION     = 0x88,
+    NXT_BOOT                   = 0x97,
+    NXT_SETBRICKNAME           = 0x98,
+    NXT_GETDEVICEINFO          = 0x9B
+}
+
+-------------------------------------------------------------------------------
+-- System Command Code Representation
+-- @class table
+-- @name lnxt.NUM_FORMAT
+-- @field UBYTE   Unsigned char
+-- @field SBYTE   Signed char
+-- @field UWORD   Unsigned short
+-- @field SWORD   Signed short  
+-- @field ULONG   Unsigned int  
+-- @field SLONG   Signed int  
+NUM_FORMAT = {
+    UBYTE                      = 0x00,
+    SBYTE                      = 0x01,
+    UWORD                      = 0x02,
+    SWORD                      = 0x03,
+    ULONG                      = 0x04,
+    SLONG                      = 0x05
+}                              
+
+local RETURN_CODE = 0x02 
+local STATUS_OK   = 0x00
+
+local nxt = {}
+
+
+-------------------------------------------------------------------------------
+-- Auxiliar function to search the key of a given code on a table
+-- @param code value to be looked
+-- @param t table to look into
+-- @return KEY if found else "Unknown"
+function search_enum( code , t )
+    local KEY = "Unknown"
+    for key,value in pairs(t) do
+        if value == code then
+            KEY = key
+            break
+        end
+    end
+    return KEY
+end
+
+
+--
+-- Direct Commands
+--
+
+-------------------------------------------------------------------------------
+-- Start a program stored on the brick. 
+-- @param name program filename
+-- @param response (boolean) defines if a reponse status is required
+-- @return if response=true return true if status is ok or return nil and error message
+
+function nxt:StartProgram( name , response )
+    local msg = lnxtcore.StartProgram( name , response )
+
+    local result = self:exec_cmd( msg , response )
+
+    if response and result then
+        local code,command, status = string.byte( result, 1 , #result )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_STARTPROGRAM"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        return true
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Stops the current running program.
+-- @param response (boolean) defines if a reponse status is required
+-- @return if response=true return true if status is ok or return nil and error message
+
+function nxt:StopProgram( response )
+    local msg = lnxtcore.StopProgram(  response )
+    local result = self:exec_cmd( msg , response )
+
+    if response and result then
+        local code,command, status = string.byte( result, 1 , #result )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_STOPPROGRAM"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        return true
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Plays a sound file stored in the brick.
+-- @param filename sound filename
+-- @param loop (boolean)
+-- @param response (boolean) defines if a reponse status is required
+-- @return if response=true return true if status is ok or return nil and error message
+
+function nxt:PlaySoundFile( filename , loop , response )
+    local msg = lnxtcore.PlaySoundFile( filename , loop , response )
+    local result = self:exec_cmd( msg , response )
+ 
+    if response and result then
+        local code,command, status = string.byte( result, 1 , #result )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_PLAYSOUNDFILE"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        return true
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Play a tone.
+-- @param frequency frequency for the tone in Hz
+-- @param duration duration for the tone in ms
+-- @param response (boolean) defines if a reponse status is required
+-- @return if response=true return true if status is ok or return nil and error message
+
+function nxt:PlayTone( frequency , duration , response )
+    local msg = lnxtcore.PlayTone( frequency , duration , response )
+    local result = self:exec_cmd( msg , response )
+ 
+    if response and result then
+        local code,command, status = string.byte( result, 1 , #result )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_PLAYTONE"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        return true
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Set output state of the A , B and C ports (Motors). 
+-- @param port         Output port
+-- @param power        Power set point range (-100 - 100)
+-- @param mode         Output mode
+-- @param regulation   Regulation mode
+-- @param turn_ration  Turn ration (-100 - 100) 
+-- @param runstate     Run State
+-- @param tacho_limit  Tacho limit (0 run forever)
+-- @param response (boolean) defines if a reponse status is required
+-- @return if response=true return true if status is ok or return nil and error message
+-- @see lnxt.output_port, lnxt.output_mode, lnxt.regulation_mode, lnxt.run_state
+function nxt:SetOutputState( port , power , mode , regulation , turn_ration , runstate , tacho_limit , response )
+
+    local port = output_port[port]
+    local mode = output_mode[mode]
+    local regulation = regulation_mode[regulation]
+    local runstate = run_state[runstate]
+
+    local msg = lnxtcore.SetOutputState( port , power , mode , regulation , 
+                                   turn_ration , runstate , tacho_limit , response )
+    local result = self:exec_cmd( msg , response )
+ 
+    if response and result then
+        local code,command, status = string.byte( result, 1 , #result )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_SETOUTPUTSTATE"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        return true
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Set input mode of the ports 1, 2, 3 and 4 (Sensors).
+-- @param port  input port
+-- @param sensor_type sensor type 
+-- @param sensor_mode input mode 
+-- @param response (boolean) defines if a reponse status is required
+-- @return if response=true return true if status is ok or return nil and error message
+
+function nxt:SetInputMode( port , stype , smode , response )
+    port  = input_port[port]
+    stype = sensor_type[stype]
+    smode = input_mode[smode]
+    
+    local msg = lnxtcore.SetInputMode( port , stype , smode , response )
+    local result = self:exec_cmd( msg , response )
+
+    if response and result then
+        local code,command, status = string.byte( result, 1 , #result )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_SETINPUTMODE"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        return true
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Get current output state (Motors).
+-- @param port output port
+-- @return a table with the following keys {port, power, mode, regulation,
+-- turn_ration, runstate, tacholimit, tachocount, blocktachocount, rotationcount}
+-- or nil and error message
+
+function nxt:GetOutputState( port )
+    local port = output_port[port]
+
+    local msg = lnxtcore.GetOutputState( port , true )
+    local result = self:exec_cmd( msg , true )
+
+    if result then
+        local code,command, status = string.byte( result, 1 , 3 )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_GETOUTPUTSTATE"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        -- Parsing output state string 
+        local state ={}
+
+        local port,power,mode,regulation,turnratio, runstate = string.byte(result, 4,9)
+
+        state.port            = search_enum( port, output_port )
+        state.power           = lnxtcore.BytesConverter( string.sub(result, 5, 5), NUM_FORMAT["SBYTE"] )
+        state.mode            = search_enum( mode, output_mode )
+        state.regulation      = search_enum( regulation, regulation_mode )
+        state.turn_ratio      = lnxtcore.BytesConverter( string.sub(result, 8, 8), NUM_FORMAT["SBYTE"] )
+        state.runstate        = search_enum( runstate, run_state )
+        state.tacholimit      = lnxtcore.BytesConverter( string.sub(result, 10, 13), NUM_FORMAT["ULONG"] ) 
+        state.tachocount      = lnxtcore.BytesConverter( string.sub(result, 14, 17), NUM_FORMAT["SLONG"] ) 
+        state.blocktachocount = lnxtcore.BytesConverter( string.sub(result, 18, 21), NUM_FORMAT["SLONG"] ) 
+        state.rotationcount   = lnxtcore.BytesConverter( string.sub(result, 22, 25), NUM_FORMAT["SLONG"] )   
+
+        return state
+    else
+        return nil, "Invalid result from exec_cmd!"
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Get input values (Sensors).
+-- @param port input port
+-- @return a table with the following keys
+-- { port, valid, calibrated, sensor_type, sensor_mode, raw,
+--  normalized, scaled, calibrated }
+-- or nil and error message
+
+function nxt:GetInputValues( port )
+
+    local port = input_port[port]
+    local msg = lnxtcore.GetInputValues( port , true )
+    local result = self:exec_cmd( msg , true )
+
+    if result then
+        local code,command, status = string.byte( result, 1 , 3 )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_GETINPUTVALUES"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        -- Parsing input values string 
+        local values ={}
+
+        local port,valid,calibrated,stype,smode= string.byte(result, 4,8)
+
+        values.port        = search_enum( port, input_port )
+        values.valid       = (valid == 1) 
+        values.calibrated  = (calibrated == 1)
+        values.sensor_type = search_enum( stype , sensor_type )
+        values.sensor_mode = search_enum( smode , input_mode  )
+        values.raw         = lnxtcore.BytesConverter( string.sub(result,  9, 10), NUM_FORMAT["UWORD"] ) 
+        values.normalized  = lnxtcore.BytesConverter( string.sub(result, 11, 12), NUM_FORMAT["UWORD"] ) 
+        values.scaled      = lnxtcore.BytesConverter( string.sub(result, 13, 14), NUM_FORMAT["SWORD"] ) 
+        values.calibrated  = lnxtcore.BytesConverter( string.sub(result, 15, 16), NUM_FORMAT["SWORD"] )   
+
+        return values
+    else
+        return nil, "Invalid result from exec_cmd!"
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Reset input scaled value.
+-- @param port input port
+-- @param response (boolean) defines if a reponse status is required
+-- @return if response=true return true if status is ok or return nil and error message
+
+function nxt:ResetInputScaledValue( port , response )
+    local port = input_port[port]
+    local msg = lnxtcore.ResetInputScaledValue( port , response )
+    local result = self:exec_cmd( msg , response )
+
+    if response and result then
+        local code,command, status = string.byte( result, 1 , #result )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_RESETINPUTSCALEDVALUE"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        return true
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Write a message to a specific inbox on the NXT. 
+-- This is used to send a message to a running program.
+-- @param inbox_number inbox number
+-- @param message  message data
+-- @param response (boolean) defines if a reponse status is required
+-- @return if response=true return true if status is ok or return nil and error message
+
+function nxt:MessageWrite( inbox_number , message , response )
+    local msg = lnxtcore.MessageWrite(  inbox_number , message , response )
+    local result = self:exec_cmd( msg , response )
+
+    if response and result then
+        local code,command, status = string.byte( result, 1 , #result )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_MESSAGEWRITE"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        return true
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Resets the given motor posistion.
+-- @param port  output port
+-- @param relative (boolean) True: position relative to last movement, False: absolut position
+-- @param response (boolean) defines if a reponse status is required
+-- @return if response=true return true if status is ok or return nil and error message
+
+function nxt:ResetMotorPosition( port , relative , response )
+
+    local port = output_port[port]
+    local msg = lnxtcore.ResetMotorPosition( port, relative, response )
+    local result = self:exec_cmd( msg , response )
+
+    if response and result then
+        local code,command, status = string.byte( result, 1 , #result )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_RESETMOTORPOSISTION"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        return true
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Get current battery level in millivolts.
+-- @return Battery level or nil and error message
+
+function nxt:GetBatteryLevel()
+    local msg = lnxtcore.GetBatteryLevel( true )
+    local result = self:exec_cmd( msg , true )
+    
+    if result then
+        local code,command, status = string.byte( result, 1 , 3  )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_GETBATTERYLEVEL"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        local blevel = lnxtcore.BytesConverter( string.sub(result ,4,5), NUM_FORMAT["UWORD"] )
+        return blevel
+    else
+        return nil, "Invalid result from exec_cmd!"
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Stop current sound playback.
+-- @param response (boolean) defines if a reponse status is required
+-- @return if response=true return true if status is ok or return nil and error message
+
+function nxt:StopSoundPlayback( response )
+    local msg = lnxtcore.StopSoundPlayback( response )
+    local result = self:exec_cmd( msg , response )
+ 
+    if response and result then
+        local code,command, status = string.byte( result, 1 , #result )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_STOPSOUNDPLAYBACK"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        return true
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Keep the connection alive and prevents the brick from going to sleep.
+-- @param response (boolean) defines if a reponse status is required
+-- @return milliseconds or nil and error message
+
+function nxt:KeepAlive( response )
+    local msg = lnxtcore.KeepAlive( response )
+    local result = self:exec_cmd( msg , response )
+
+    if response then
+        if result then
+            local code,command, status = string.byte( result, 1 , 3  )
+
+            if code ~= RETURN_CODE or command ~= direct_command["NXT_KEEPALIVE"] then
+                return nil, "Invalid return message!"
+            end
+
+            if status ~= STATUS_OK then
+                return nil, lnxtcore.GetErrorMsg(status)
+            end
+
+            local millisec = lnxtcore.BytesConverter( string.sub(result ,4,7), NUM_FORMAT["SLONG"] )
+            return millisec
+        else
+            return nil, "Invalid result from exec_cmd!"
+        end
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Get the status of an Lowspeed port ( ultrasonic sensor ) 
+-- @return bytes_ready or nil and error message
+
+function nxt:LsGetStatus( port )
+    port = input_port[port]
+    local msg = lnxtcore.LsGetStatus( port, true )
+    local result = self:exec_cmd( msg , true )
+
+    if result then
+        local code,command, status = string.byte( result, 1 , 3  )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_LSGETSTATUS"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        local bytes_ready = lnxtcore.BytesConverter( string.sub(result ,4,4), NUM_FORMAT["UBYTE"] )
+        return bytes_ready 
+    else
+        return nil, "Invalid result from exec_cmd!"
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Write data to lowspeed port
+-- @param port  input port
+-- @param message data
+-- @param response (boolean) defines if a reponse status is required
+-- @return if response=true return true if status is ok or return nil and error message
+
+function nxt:LsWrite( port , message , response )
+    port = input_port[port]
+    local msg = lnxtcore.LsWrite( port , message , response )
+    local result = self:exec_cmd( msg , response )
+    
+    if response and result then
+        local code,command, status = string.byte( result, 1 , #result )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_LSWRITE"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        return true
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Read data from from lowspeed port
+-- @param port input port
+-- @return data or nil and error message
+
+function nxt:LsRead( port )
+    port = input_port[port]
+    local msg = lnxtcore.LsRead( port , true )
+    local result = self:exec_cmd( msg , true )
+ 
+    if result then
+        local code,command, status = string.byte( result, 1 , 3  )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_LSREAD"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        local bytes_read = lnxtcore.BytesConverter( string.sub(result ,4,4), NUM_FORMAT["UBYTE"] )
+        return string.sub(result ,5,4 + bytes_read )
+    else
+        return nil, "Invalid result from exec_cmd!"
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Get current battery level in millivolts.
+-- @return Current running program name or nil and error message
+
+function nxt:GetCurrentProgram()
+    local msg = lnxtcore.GetCurrentProgram( true )
+    local result = self:exec_cmd( msg , true )
+    
+    if result then
+        local code,command, status = string.byte( result, 1 , 3  )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_GETCURRENTPROGRAM"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+        local name = string.sub(result , 4,#result)
+        return string.sub( name , 1,  string.find(name,"\0" )-1)
+    else
+        return nil, "Invalid result from exec_cmd!"
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Read a message from the given inbox number
+-- @param remote_inbox  remote inbox number
+-- @param local_inbox   local inbox number
+-- @param remove        remove?(boolean)
+-- @return inbox_num, message or nil and error message
+
+function nxt:MessageRead( remote_inbox , local_inbox , remove )
+
+    local msg = lnxtcore.MessageRead( remote_inbox , local_inbox , remove , true )
+    local result = self:exec_cmd( msg , true )
+
+    if result then
+        local code,command, status = string.byte( result, 1 , 3  )
+
+        if code ~= RETURN_CODE or command ~= direct_command["NXT_MESSAGEREAD"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        local inbox   = lnxtcore.BytesConverter( string.sub(result ,4,4), NUM_FORMAT["UBYTE"] )
+        local size    = lnxtcore.BytesConverter( string.sub(result ,5,5), NUM_FORMAT["UBYTE"] )
+        local message = string.sub(result ,6,5+size)
+        return inbox,message
+    else
+        return nil, "Invalid result from exec_cmd!"
+    end
+end
+
+--
+-- System Commands
+--
+
+-------------------------------------------------------------------------------
+-- get firmware version
+-- @return a table with the following keys {Protocol,Firmware} 
+-- or nil and error message
+function nxt:GetFirmwareVersion()
+    local msg = lnxtcore.GetFirmwareVersion()
+    local result = self:exec_cmd( msg , true )
+
+    if result then
+        local code,command, status = string.byte( result, 1 , 3 )
+
+        if code ~= RETURN_CODE or command ~= system_command["NXT_GETFIRMWAREVERSION"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        local version = {}
+        local ProtMin,ProtMajor , FirmMin, FirmMajor =  string.byte( result, 4 , #result )
+  
+        version.Protocol =  ProtMajor .. "." .. ProtMin
+        version.Firmware =  FirmMajor .. "." .. FirmMin
+
+        return version
+    else
+        return nil, "Invalid return message!"
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Boot the system and wait for firmware upgrade
+-- ATTENTION: Do not use this function unless you know what are you doing.
+-- @return status(boolean) or nil and error message
+
+function nxt:Boot()
+    if self.connection == "bt" then return nil, "Command not allowed on bluetooth" end
+
+    local msg = lnxtcore.Boot()
+    local result = self:exec_cmd( msg , true )
+
+    if result then
+        local code,command, status = string.byte( result, 1 , 3 )
+
+        if code ~= RETURN_CODE or command ~= system_command["NXT_BOOT"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        local yes = string.sub(result , 4 , 3 )
+        print(yes)
+        if yes == "yes" then return true end
+
+        return false
+    else
+        return nil, "Invalid return message!"
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Change the brick name
+-- @param name new name
+-- @return true if status is ok or return nil and error message
+function nxt:SetBrickName(name)
+    local msg = lnxtcore.SetBrickName(name)
+    local result = self:exec_cmd( msg , true )
+
+    if result then
+        local code,command, status = string.byte( result, 1 , 3 )
+
+        if code ~= RETURN_CODE or command ~= system_command["NXT_SETBRICKNAME"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+
+        return true
+    else
+        return nil, "Invalid return message!"
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Get device information
+-- @return a table with the following keys {name, bt_addr, signal, free_space }
+-- or nil and error message
+function nxt:GetDeviceInfo()
+    local msg = lnxtcore.GetDeviceInfo()
+    local result = self:exec_cmd( msg , true )
+
+    if result then
+        local code,command, status = string.byte( result, 1 , 3 )
+
+        if code ~= RETURN_CODE or command ~= system_command["NXT_GETDEVICEINFO"] then
+            return nil, "Invalid return message!"
+        end
+
+        if status ~= STATUS_OK then
+            return nil, lnxtcore.GetErrorMsg(status)
+        end
+        local info = {}
+
+        local name = string.sub(result, 4, 18)
+        info.name       = string.sub( name , 1,  string.find(name,"\0" )-1)
+        info.bt_addr    = string.format( "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x", string.byte(result,19,25) )
+        info.signal     = lnxtcore.BytesConverter( string.sub(result ,26,29), NUM_FORMAT["SLONG"] )
+        info.free_space = lnxtcore.BytesConverter( string.sub(result ,30,33), NUM_FORMAT["ULONG"] )
+        
+        return info
+    else
+        return nil, "Invalid return message!"
+    end
+end
+
+--
+-- File Operations (Future work)
+--
+
+-- open read
+-- open write
+-- Read
+-- Write
+-- Close
+-- Delete
+-- find first
+-- find next
+
+-------------------------------------------------------------------------------
+-- Creates a new instance of the nxt
+-- @param nxtdev a usb or bluetooth device
+-- @return a new nxt instance
+
+function new( nxtdev )
+    local o={}
+    setmetatable(o,nxt)
+    nxt.__index = nxt;
+
+    if not nxtdev or not nxtdev.idclass then
+        return nil, "Invalid Device!"
+    end
+
+    if nxtdev.idclass == "usb_device" then
+        o.dhandle    = lnxtusb.claim_dev(nxtdev)
+        if o.dhandle == nil then return nil, "could not claim device!" end
+        o.exec_cmd   = lnxtusb.exec_cmd
+        o.connection = "usb"
+    elseif nxtdev.idclass == "luabt_socket_handle" then
+        o.socket     = nxtdev 
+        o.exec_cmd   = lnxtbt.exec_cmd
+        o.connection = "bt"
+    else
+        return nil, "Invalid Device!"
+    end
+    
+    return o;
+end
+
+-------------------------------------------------------------------------------
+-- Nxt sleep function
+-- @class function
+-- @name lnxt.sleep
+-- @param msec milliseconds
+sleep = lnxtcore.sleep
+
+-------------------------------------------------------------------------------
+-- LuaNXT version string
+-- @return the version string
+function version()
+    return lnxtcore.version
+end
+
+

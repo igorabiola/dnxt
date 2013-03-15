@@ -1,0 +1,48 @@
+require("lusb")
+print(lusb.version)
+
+--dev,err = lusb.find_dev( 0x045e , 0x00e1 )
+--dev,err = lusb.find_dev( 0x04f3 , 0x210 )
+dev,err = lusb.find_dev( 0x138a , 0x001 )
+
+if dev == nil then 
+    print(err) 
+else
+    dhandle,err = dev:open()
+
+    if not dhandle then  
+        print(err)  
+        os.exit(0) 
+    end
+
+    print( dhandle:get_string_simple(2)  )
+                                        
+    ret,err =  dhandle:claim_interface(0)
+    while  not ret do
+       print( err .. "\ntrying do detach kernel driver")
+       ret,err = dhandle:detach_kernel_driver_np(0)
+
+       if not ret then
+           print(err .. "\nFailed to detach kernel driver.\n Exiting")
+           dhandle:close()
+           os.exit(1)
+       end
+
+       print("Succeded!")
+
+       ret,err =  dhandle:claim_interface(0)
+    end
+	i = 10;
+    while i < 0 do
+       s,err = dhandle:interrupt_read(0x81, 4, 10000)
+       if not s then print(err) break end
+       --print("size: " .. #s )
+       print(string.byte(s , 1 , #s))
+	i = i -1;
+    end
+
+    dhandle:release_interface(0)
+    dhandle:close()
+end
+
+

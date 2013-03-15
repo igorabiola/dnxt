@@ -1,0 +1,36 @@
+#------
+# LuaSocket makefile configuration
+#
+
+#------
+# Output file names
+#
+EXT=so
+SOCKET_V=2.0.2
+MIME_V=1.0.2
+SOCKET_SO=socket.$(EXT).$(SOCKET_V) 
+MIME_SO=mime.$(EXT).$(MIME_V)
+UNIX_SO=unix.$(EXT)
+
+#------
+# Lua includes and libraries
+#
+LUAINC=-I$(LUA_INC)
+
+
+#------
+# Top of your Lua installation
+# Relative paths will be inside the src tree
+#
+INSTALL_TOP_SHARE=$(INSTALL_LMOD)
+INSTALL_TOP_LIB=$(INSTALL_CMOD)
+
+
+DEF=-DLUASOCKET_DEBUG 
+
+#CFLAGS= $(LUAINC) $(DEF) -pedantic -Wall -O2 -fpic
+LDFLAGS=-O -fpic -shared
+ 
+#------
+# End of makefile configuration
+#

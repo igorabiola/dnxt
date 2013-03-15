@@ -1,0 +1,576 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+    <title>Reference</title>
+    <link rel="stylesheet" href="../luadoc.css" type="text/css" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+</head>
+
+<body>
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+<div id="main">
+
+<div id="navigation">
+
+
+<h1>LuaDoc</h1>
+<ul>
+	
+	<li><a href="../index.html">Index</a></li>
+	
+</ul>
+
+
+<!-- Module list -->
+
+<h1>Modules</h1>
+<ul>
+
+	<li><strong>dnxt</strong></li>
+	
+	<li>
+		<a href="../modules/dnxtClient.html">dnxtClient</a>
+	</li>
+
+	<li>
+		<a href="../modules/dnxtTripod.html">dnxtTripod</a>
+	</li>
+
+</ul>
+
+
+
+<!-- File list -->
+
+<h1>Files</h1>
+<ul>
+
+	<li>
+		<a href="../files/dnxt.html">dnxt.lua</a>
+	</li>
+
+	<li>
+		<a href="../files/dnxtClient.html">dnxtClient.lua</a>
+	</li>
+
+	<li>
+		<a href="../files/dnxtTripod.html">dnxtTripod.lua</a>
+	</li>
+
+</ul>
+
+
+
+
+
+
+</div><!-- id="navigation" -->
+
+<div id="content">
+
+<h1>Module <code>dnxt</code></h1>
+
+<p>Módulo Servidor </p>
+
+
+
+<h2>Functions</h2>
+<table class="function_list">
+
+	<tr>
+	<td class="name" nowrap><a href="#createMutex">createMutex</a>&nbsp;(name)</td>
+	<td class="summary">cria uma região crítica.</td>
+	</tr>
+
+	<tr>
+	<td class="name" nowrap><a href="#executeCommand">executeCommand</a>&nbsp;(robotID, name, mutexList, ...)</td>
+	<td class="summary">Executa um comando previamente cadastrado.</td>
+	</tr>
+
+	<tr>
+	<td class="name" nowrap><a href="#exitCR">exitCR</a>&nbsp;(mutexList)</td>
+	<td class="summary">Libera as regiões críticas.</td>
+	</tr>
+
+	<tr>
+	<td class="name" nowrap><a href="#get_distance">get_distance</a>&nbsp;(robot)</td>
+	<td class="summary">le dados do sensor de ultrasom e calcula distancia de obstaculo.</td>
+	</tr>
+
+	<tr>
+	<td class="name" nowrap><a href="#initServer">initServer</a>&nbsp;(addr, port)</td>
+	<td class="summary">Inicia o loop do servidor.</td>
+	</tr>
+
+	<tr>
+	<td class="name" nowrap><a href="#init_usonic">init_usonic</a>&nbsp;(robot)</td>
+	<td class="summary">Inicia o sensor ultrasonico do robo.</td>
+	</tr>
+
+	<tr>
+	<td class="name" nowrap><a href="#nxtConnect">nxtConnect</a>&nbsp;(mode, name, mac)</td>
+	<td class="summary">Conecta ao lego nxt.</td>
+	</tr>
+
+	<tr>
+	<td class="name" nowrap><a href="#nxtSetCommand">nxtSetCommand</a>&nbsp;(name, command)</td>
+	<td class="summary">Cadastra função para ser chamada remotamente.</td>
+	</tr>
+
+	<tr>
+	<td class="name" nowrap><a href="#readMsg">readMsg</a>&nbsp;(robotID, robot, mutexList, inbox, callback, ...)</td>
+	<td class="summary">Lê a próxima mensagem da fila.</td>
+	</tr>
+
+	<tr>
+	<td class="name" nowrap><a href="#sendMsg">sendMsg</a>&nbsp;(robotID, robot, mutexList, mailbox_index, msg)</td>
+	<td class="summary">Envia uma mensagem para o programa em execução no nxt.</td>
+	</tr>
+
+	<tr>
+	<td class="name" nowrap><a href="#startProgram">startProgram</a>&nbsp;(robotID, robot, mutexList, program, response)</td>
+	<td class="summary">Inicia a execução de um programa nativo.</td>
+	</tr>
+
+	<tr>
+	<td class="name" nowrap><a href="#stopProgram">stopProgram</a>&nbsp;(robotID, robot)</td>
+	<td class="summary">Para a execução de um programa nativo.</td>
+	</tr>
+
+</table>
+
+
+
+
+
+
+<br/>
+<br/>
+
+
+
+<h2><a name="functions"></a>Functions</h2>
+<dl class="function">
+
+
+
+<dt><a name="createMutex"></a><strong>createMutex</strong>&nbsp;(name)</dt>
+<dd>
+cria uma região crítica.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  name: nome região crítica
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="executeCommand"></a><strong>executeCommand</strong>&nbsp;(robotID, name, mutexList, ...)</dt>
+<dd>
+Executa um comando previamente cadastrado.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  robotID: id do robo sobre o qual a func de ser chamada.
+	</li>
+	
+	<li>
+	  name: nome do comando a ser executado.
+	</li>
+	
+	<li>
+	  mutexList: lista de objetos de exclução mútua.
+	</li>
+	
+	<li>
+	  ...: outros parametros para serem repasados a func.
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="exitCR"></a><strong>exitCR</strong>&nbsp;(mutexList)</dt>
+<dd>
+Libera as regiões críticas.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  mutexList: vetor de nomes regiões crítica
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="get_distance"></a><strong>get_distance</strong>&nbsp;(robot)</dt>
+<dd>
+le dados do sensor de ultrasom e calcula distancia de obstaculo.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  robot: robo.
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="initServer"></a><strong>initServer</strong>&nbsp;(addr, port)</dt>
+<dd>
+Inicia o loop do servidor.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  addr: endereço ip do servidor.
+	</li>
+	
+	<li>
+	  port: porta do servidor.
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="init_usonic"></a><strong>init_usonic</strong>&nbsp;(robot)</dt>
+<dd>
+Inicia o sensor ultrasonico do robo.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  robot: robo.
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="nxtConnect"></a><strong>nxtConnect</strong>&nbsp;(mode, name, mac)</dt>
+<dd>
+Conecta ao lego nxt.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  mode: modo de conexão ( usb  ou bt )
+	</li>
+	
+	<li>
+	  name: identficador do robo.
+	</li>
+	
+	<li>
+	  mac: opcional, identificador mac do lego nxt
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="nxtSetCommand"></a><strong>nxtSetCommand</strong>&nbsp;(name, command)</dt>
+<dd>
+Cadastra função para ser chamada remotamente.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  name: nome pelo qual a função será chamada.
+	</li>
+	
+	<li>
+	  command: (function) a função.
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="readMsg"></a><strong>readMsg</strong>&nbsp;(robotID, robot, mutexList, inbox, callback, ...)</dt>
+<dd>
+Lê a próxima mensagem da fila.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  robotID: id do robo sobre o qual a func de ser chamada.
+	</li>
+	
+	<li>
+	  robot: objto LuaNxt.
+	</li>
+	
+	<li>
+	  mutexList: lista de objetos de exclução mútua.
+	</li>
+	
+	<li>
+	  inbox: número a mailbox a ser lida.
+	</li>
+	
+	<li>
+	  callback: (function) função para processar a mensagem.
+	</li>
+	
+	<li>
+	  ...: 
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="sendMsg"></a><strong>sendMsg</strong>&nbsp;(robotID, robot, mutexList, mailbox_index, msg)</dt>
+<dd>
+Envia uma mensagem para o programa em execução no nxt.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  robotID: id do robo sobre o qual a func de ser chamada.
+	</li>
+	
+	<li>
+	  robot: objto LuaNxt.
+	</li>
+	
+	<li>
+	  mutexList: lista de objetos de exclução mútua.
+	</li>
+	
+	<li>
+	  mailbox_index: número da mailbox.
+	</li>
+	
+	<li>
+	  msg: mensagem.
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="startProgram"></a><strong>startProgram</strong>&nbsp;(robotID, robot, mutexList, program, response)</dt>
+<dd>
+Inicia a execução de um programa nativo.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  robotID: id do robo sobre o qual a func de ser chamada.
+	</li>
+	
+	<li>
+	  robot: objto LuaNxt.
+	</li>
+	
+	<li>
+	  mutexList: lista de objetos de exclução mútua.
+	</li>
+	
+	<li>
+	  program: nome do programa a ser iniciado.
+	</li>
+	
+	<li>
+	  response: (boolean) esperar o inicio da execução.
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="stopProgram"></a><strong>stopProgram</strong>&nbsp;(robotID, robot)</dt>
+<dd>
+Para a execução de um programa nativo.
+
+
+<p>
+<h3>Parameters:</h3>
+<ul>
+	
+	<li>
+	  robotID: id do robo sobre o qual a func de ser chamada.
+	</li>
+	
+	<li>
+	  robot: objto LuaNxt.
+	</li>
+	
+</ul>
+</p>
+
+
+
+
+
+
+</dd>
+
+
+</dl>
+
+
+
+
+
+
+</div> <!-- id="content" -->
+
+</div> <!-- id="main" -->
+
+<div id="about">
+	<p><a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0!" height="31" width="88" /></a></p>
+</div> <!-- id="about" -->
+
+</div> <!-- id="container" -->	
+</body>
+</html>

@@ -1,0 +1,981 @@
+/**
+ * @file lnxt_core.c
+ * 
+ * @brief <b>Functions to build the NXT protocol messages</b>
+ *
+ * For futher informations see:
+ *  "Appendix 2-LEGO MINDSTORMS NXT Direct commands.pdf"
+ *
+ * @author Victor Fusco
+ *
+ */
+
+#ifdef WIN32
+#include <windows.h>
+#include <winbase.h>
+#define INLINE _inline
+#else
+#include <unistd.h>
+#define INLINE inline
+#endif
+
+#include <lua.h>
+#include <lauxlib.h>
+#include <string.h>
+
+
+
+#define LNXT_OWN
+#include "lnxt_core.h"
+#undef LNXT_OWN
+
+#define MYNAME		"lnxt.core"
+#define MYVERSION	"libnxt for " LUA_VERSION " - 2007"
+
+/*********************************************************************
+ * Auxiliar functions
+ *********************************************************************/
+
+/** 
+ * @brief <b>Auxiliar function that returns the code for "Return required"</b>
+ * 
+ * @param boolean 
+ * 
+ * @return NXT code for "return message required"
+ */
+static INLINE unsigned char ret_required(int boolean)
+{
+    return (unsigned char)( boolean ? NXT_DIRECT_RET : NXT_DIRECT_NORET);
+}
+
+/** 
+ * @brief <b>Auxiliar function for Port Number validation</b>
+ * 
+ * @param port 
+ * 
+ * @return 1 if valid port number else returns 0
+ */
+static INLINE unsigned char check_port( unsigned char port )
+{
+    if((port == NXT_OUTPORT_A ) || ( port == NXT_OUTPORT_B) 
+            || (port == NXT_OUTPORT_C)|| (port == NXT_OUTPORT_ALL))
+        return 1;
+    return 0;
+}
+
+/*********************************************************************
+ * NXT Message composition functions
+ *********************************************************************/
+
+/*==== Direct Commands ====*/
+
+/** 
+ * @brief <b>Start a program in the robot</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *   lnxt.core.StartProgram( name [, return_required ] )
+ *
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int StartProgram( lua_State * L )
+{
+    size_t size;
+    const char * filename;
+    char msg[22];
+
+    msg[0] = ret_required( lua_toboolean(L,2) );
+    msg[1] = NXT_STARTPROGRAM;
+
+    filename = lua_tolstring( L , 1 , &size );
+
+    size =  (size <= 19)? size : 19 ;
+    
+    strncpy( &msg[2] , filename , size);
+    msg[size+2]= '\0';
+    
+    lua_pushlstring( L , msg, 2 + size + 1);
+
+    return 1;
+}
+
+/** 
+ * @brief <b>Stops the current running program</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.StopProgram([ return_required ])
+ *
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int StopProgram( lua_State * L )
+{
+    char msg[2];
+    msg[0] = ret_required( lua_toboolean(L,1) );
+    msg[1] = NXT_STOPPROGRAM;
+    lua_pushlstring( L , msg, 2);
+    return 1;
+}
+
+/** 
+ * @brief <b>Plays a sound file stored in the brick</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.PlaySoundFile( filename [, loop [, return_required ]] )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int PlaySoundFile( lua_State * L )
+{
+    char msg[23];
+    const char * filename;
+    size_t size;
+    
+    msg[0] = ret_required( lua_toboolean(L,3) );
+    msg[1] = NXT_PLAYSOUNDFILE;
+    msg[2] = lua_toboolean( L , 2 );
+
+    filename = lua_tolstring( L , 1 , &size );
+    
+    size = (size <= 19) ? size : 19; 
+
+    strncpy( &msg[3] , filename , size);
+    msg[size+3]= '\0';
+
+    lua_pushlstring( L , msg, 3 + size + 1);
+
+    return 1;
+}
+
+/** 
+ * @brief <b>Play a tone</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.PlayTone( frequency , duration [, return_required ] )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int PlayTone( lua_State * L )
+{
+    char msg[6];
+    msg[0]  = ret_required( lua_toboolean(L,3) );
+    msg[1]  = NXT_PLAYTONE;
+    
+    /* Frequency (200,14000) Hz */
+    *((unsigned short*)(&msg[2])) = (unsigned short)luaL_checkint(L,1);
+
+    /* Duration in ms */
+    *((unsigned short*)(&msg[4])) = (unsigned short)luaL_checkint(L,2);
+
+    lua_pushlstring( L , msg, 6);
+    return 1;
+}
+
+/** 
+ * @brief <b>Set Output State</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.SetOutputState( port , power , mode , regulation , turn_ration , 
+ *                      run_state , tacho_limit [, return_required ] )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int SetOutputState( lua_State * L )
+{
+    char msg[13];
+
+    msg[0] = ret_required( lua_toboolean(L,8) );
+    msg[1] = NXT_SETOUTPUTSTATE;
+    
+    msg[2] = (char)luaL_checkint(L,1) ; /* OUTPUT Port */
+
+    if( ! check_port(msg[2]) )
+    {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    msg[3] = (char)luaL_checkint(L,2) ; /* Power Set Point (-100,100) */
+    msg[4] = (char)luaL_checkint(L,3) ; /* Mode Byte */
+    msg[5] = (char)luaL_checkint(L,4) ; /* Regulation Mode */
+    msg[6] = (char)luaL_checkint(L,5) ; /* Turn Ration */
+    msg[7] = (char)luaL_checkint(L,6) ; /* RunState */
+
+    *((unsigned int*)(&msg[8])) = (unsigned int)luaL_checkint(L,7); /* TachoLimit*/
+
+    lua_pushlstring( L , msg, 13);
+    return 1;
+}
+
+/** 
+ * @brief <b>Set input mode</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.SetInputMode( port , sensor_type , sensor_mode [, return_required ] )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int SetInputMode( lua_State * L )
+{
+    char msg[5];
+
+    msg[0] = ret_required( lua_toboolean(L,4) );
+    msg[1] = NXT_SETINPUTMODE;
+    msg[2] = (char)luaL_checkint(L,1) ; /* Input Port  */
+    msg[3] = (char)luaL_checkint(L,2) ; /* Sensor Type */
+    msg[4] = (char)luaL_checkint(L,3) ; /* Sensor Mode */
+
+    lua_pushlstring( L , msg, 5 );
+    return 1;
+}
+
+/** 
+ * @brief <b>Get current output state</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.GetOutputState( port [, return_required ] )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int GetOutputState( lua_State * L )
+{
+    char msg[3];
+    
+    msg[0] = ret_required( lua_toboolean(L,2) );
+    msg[1] = NXT_GETOUTPUTSTATE;
+    msg[2] = (char)luaL_checkint(L,1) ; /* OUTPUT Port */
+
+    if( ! check_port(msg[2]) )
+    {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    lua_pushlstring( L , msg, 3);
+
+    return 1;
+}
+
+/** 
+ * @brief <b>Get input values</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.GetInputValues( port [, return_required ] )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int GetInputValues( lua_State * L )
+{
+    char msg[3];
+    unsigned char sensor=0;
+
+    msg[0] = ret_required( lua_toboolean(L,2) ); 
+    msg[1] = NXT_GETINPUTVALUES;
+    
+    sensor = (unsigned char)luaL_checkint(L ,1);  /* port */
+
+    if(sensor < 4)
+    {
+        msg[2]=sensor;
+        lua_pushlstring( L , msg, 3);
+    }
+    else
+    {
+        lua_pushnil(L);
+    }
+
+    return 1;
+}
+
+/** 
+ * @brief <b>Reset input scaled value</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.ResetInputScaledValue( port [, return_required ] )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int ResetInputScaledValue( lua_State * L )
+{
+    char msg[3];
+    
+    msg[0] = ret_required( lua_toboolean(L,2) );
+    msg[1] = NXT_RESETINPUTSCALEDVALUE;
+    msg[2] = (char)luaL_checkint(L,1) ; /* Input Port */
+
+    lua_pushlstring( L , msg, 3);
+    return 1;
+}
+
+/** 
+ * @brief <b>Writes a message</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.MessageWrite( inbox_number , message [, return_required ] )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int MessageWrite( lua_State * L )
+{
+    char msg[64];
+    const char * message;
+    size_t size;
+
+    msg[0] = ret_required( lua_toboolean(L,2) );
+    msg[1] = NXT_MESSAGEWRITE;
+    msg[2] =  (char)luaL_checkint(L,1) ; /* inbox number */
+
+    message = lua_tolstring( L , 1 , &size );
+
+    size = (size < 60) ? size : 60; 
+    
+    strncpy( &msg[3] , message , size);
+  
+    msg[3]      = (char)size;
+    msg[size+3] = '\0';
+
+    lua_pushlstring( L , msg, 3 + size );
+
+    return 1;
+}
+
+/** 
+ * @brief <b>Resets the given motor position</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.ResetMotorPosition( port , relative [, return_required ] )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int ResetMotorPosition( lua_State * L )
+{
+    char msg[4];
+
+    msg[0] = ret_required( lua_toboolean(L,3) );
+    msg[1] = NXT_RESETMOTORPOSISTION;
+    msg[2] =  (char)luaL_checkint(L,1) ; /* Output Port */
+    msg[3] =  (char)lua_toboolean(L,2) ; /* Relative */
+    
+    lua_pushlstring( L , msg, 4 );
+    return 1;
+}
+
+/** 
+ * @brief <b>Get current battery level in millivolts</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.GetBatteryLevel( [return_required] )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int GetBatteryLevel( lua_State * L )
+{
+    char msg[2];
+    
+    msg[0] = NXT_DIRECT_RET;
+    msg[1] = NXT_GETBATTERYLEVEL;
+
+    lua_pushlstring( L , msg, 2 );
+    return 1;
+}
+
+/** 
+ * @brief <b>Stop current sound playback</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.StopSoundPlayback( [ return_required ] )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int StopSoundPlayback( lua_State * L )
+{
+    char msg[2];
+
+    msg[0] = ret_required( lua_toboolean(L,1) );
+    msg[1] = NXT_STOPSOUNDPLAYBACK;
+
+    lua_pushlstring( L , msg, 2);
+
+    return 1;
+}
+
+/** 
+ * @brief <b>Keep the connection alive</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.KeepAlive( [ return_required ] )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int KeepAlive( lua_State * L )
+{
+    char msg[2];
+    
+    msg[0] = ret_required( lua_toboolean(L,1) );
+    msg[1] = NXT_KEEPALIVE;
+    
+    lua_pushlstring( L , msg, 2);
+    
+    return 1;
+}
+
+/** 
+ * @brief <b>Get the status of an Lowspeed port</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.LsGetStatus( port [, return_required ] )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int LsGetStatus( lua_State * L )
+{
+    char msg[3];
+    
+    msg[0] = NXT_DIRECT_RET;
+    msg[1] = NXT_LSGETSTATUS;
+    msg[2] = (char)luaL_checkint(L,1) ; /* Port */
+
+    lua_pushlstring( L , msg, 3);
+    return 1;
+}
+
+/** 
+ * @brief <b>Write data to lowspeed I2C port</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.LsWrite( port , message [, return_required ] )
+ * 
+ * TODO
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int LsWrite( lua_State * L )
+{
+    char msg[64];
+    const char * message;
+    size_t size;
+
+    msg[0] = ret_required( lua_toboolean(L,3) );
+    msg[1] = NXT_LSWRITE;
+    msg[2] =  (char)luaL_checkint(L,1) ; /* Port Number */
+
+    message = lua_tolstring( L , 2 , &size );
+
+    size = (size < 60) ? size : 60; 
+    
+    //posivel erro
+    //strncpy( &msg[3] , message , size);
+    //msg[3]      = (char)size;
+    //msg[size+3] = '\0';
+
+    strncpy( &msg[5] , message , size);
+    msg[3] = (char)size;
+    msg[4] = (char) 0x01; //by:igor
+
+    lua_pushlstring( L , msg, 3 + size  + 2);
+
+    return 1;
+}
+
+/** 
+ * @brief <b>Read data from from lowspeed port</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.LsRead( port [, return_required ] )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int LsRead( lua_State * L )
+{
+    char msg[3];
+
+    msg[0] = ret_required( lua_toboolean(L,2) );
+    msg[1] = NXT_LSREAD;
+    msg[2] = (char)luaL_checkint(L,1) ; /* Port */
+
+    lua_pushlstring( L , msg, 3);
+    return 1;
+}
+
+/** 
+ * @brief <b>Returns the name of the program currently running</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.GetCurrentProgram( [ return_required ] )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int GetCurrentProgram( lua_State * L )
+{
+    char msg[2];
+
+    msg[0] = ret_required( lua_toboolean(L,1) );
+    msg[1] = NXT_GETCURRENTPROGRAM;
+
+    lua_pushlstring( L , msg, 2);
+    return 1;
+}
+
+/** 
+ * @brief <b>Read a message from the given inbox number</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.MessageRead( remote_inbox , local_inbox , remove [, return_required ] )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int MessageRead( lua_State * L )
+{
+    char msg[5];
+   
+    msg[0] = ret_required( lua_toboolean(L,4) );
+    msg[1] = NXT_MESSAGEREAD;
+    msg[2] = (char)luaL_checkint(L , 1); /* Remote inbox number */
+    msg[3] = (char)luaL_checkint(L , 2); /* Local Inbox number */
+    msg[4] = (char)lua_toboolean(L , 3); /* Remove?  */
+
+    lua_pushlstring( L , msg, 5);
+    return 1;
+}
+
+/*==== System Commands ====*/
+
+/** 
+ * @brief <b>Returns the firmware version string</b>
+ *
+ * Pushes the NXT Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.GetFirmwareVersion()
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int GetFirmwareVersion( lua_State * L )
+{
+    char msg[2];
+
+    msg[0] = NXT_SYSTEM_RET;
+    msg[1] = (char)NXT_GETFIRMWAREVERSION;
+
+    lua_pushlstring( L , msg, 2);
+    return 1;
+}
+
+/** 
+ * @brief <b>Reboots the system - USB only</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.Boot()
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int Boot( lua_State * L )
+{
+    char msg[21] = "xxLet's dance: SAMBA\0";
+
+    msg[0] = NXT_SYSTEM_RET;
+    msg[1] = (char)NXT_BOOT;
+
+    lua_pushlstring( L , msg, 21);
+    return 1;
+}
+
+/** 
+ * @brief <b>Changes the brick name</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.SetBrickName( name )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int SetBrickName( lua_State * L )
+{
+    char msg[18];
+    const char * name;
+    size_t size = 0 ;
+
+    msg[0] = NXT_SYSTEM_RET; 
+    msg[1] = (char)NXT_SETBRICKNAME;
+
+    name = lua_tolstring( L , 1 , &size );
+
+    size = (size <= 15)? size : 15 ;
+
+    strncpy( &msg[2] , name , size);
+    msg[size+2]= '\0';
+
+    lua_pushlstring( L , msg, 2 + size + 1 );
+
+    return 1;
+}
+
+/** 
+ * @brief <b>Get Device's information</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.GetDeviceInfo()
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int GetDeviceInfo( lua_State * L )
+{
+    char msg[2];
+
+    msg[0] = NXT_SYSTEM_RET;
+    msg[1] = (char)NXT_GETDEVICEINFO;
+
+    lua_pushlstring( L , msg, 2);
+    return 1;
+}
+
+/** 
+ * @brief <b>Get error Message</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.GetErrorMsg( code )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+static int GetErrorMsg( lua_State * L )
+{
+    unsigned char error_code = 0 ;
+    unsigned short i = 0;
+    char * msg = NULL;
+
+    error_code  = (unsigned char)luaL_checkint(L,1) ; /* Error Code */
+
+    while( NXT_ERROR[i].msg != NULL )
+    {
+        if ( NXT_ERROR[i].error_code == error_code )
+        {
+            msg = NXT_ERROR[i].msg;
+            break;
+        }
+        i++;
+    }
+    
+    if (msg == NULL)
+        msg = "Unknown Error";
+
+    lua_pushstring( L , (const char *)msg );
+
+    return 1;
+}
+
+/** 
+ * @brief <b>Adds the Bluetooth header on the packet</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.putBTHeader( data_string )
+ * 
+ * @param L 
+ * 
+ * @return 
+ */
+static int putBTHeader( lua_State * L )
+{
+    char buf[255];
+    size_t size;
+    const char * bytes;
+
+    bytes = luaL_checklstring( L , 1 , &size );
+
+    if( size > 253 )
+    {
+        lua_pushnil( L );
+        lua_pushstring( L , "Message length too big" );
+        return 2;
+    }
+
+    buf[0] = (unsigned char) size ;
+    buf[1] = 0;
+    memcpy( &buf[2] , bytes , size );
+
+    lua_pushlstring( L , buf , size+2 );
+
+    return 1;
+}
+
+/** 
+ * @brief <b>Remove the Bluetooth header from the packet</b>
+ *
+ * Pushes the NXT Direct Command code string onto the stack.
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.stripBTHeader( data_string )
+ * 
+ * @param L 
+ * 
+ * @return 
+ */
+static int stripBTHeader( lua_State * L )
+{
+    char buf[255];
+    size_t size;
+    const char * bytes;
+
+    bytes = luaL_checklstring( L , 1 , &size );
+    
+    if( size > 255 )
+    {
+        lua_pushnil( L );
+        lua_pushstring( L , "Message length too big" );
+        return 2;
+    }
+
+    memcpy( &buf , bytes+2 , size-2 );
+
+    lua_pushlstring( L , buf , size-2 );
+
+    return 1;
+}
+
+/** 
+ * @brief <b>Millisecods sleep</b>
+ *
+ * Make the process sleep for the given milliseconds
+ * 
+ * @par Lua Signature:
+ *      lnxt.core.sleep( milliseconds )
+ * 
+ * @param L lua state
+ * 
+ * @return The number of return arguments. Always one here.
+ */
+#ifndef WIN32
+static int lnxt_sleep( lua_State * L )
+{
+    unsigned int msec = 0;
+    unsigned int ret  = 0;
+
+    msec = luaL_checkint(L , 1); /* msec */
+
+	ret  = usleep(msec * 1000);
+
+    lua_pushinteger( L , ret );
+
+    return 1;
+}
+
+#else
+static int lnxt_sleep( lua_State * L )
+{
+    DWORD msec = 0;
+    
+	msec = luaL_checkint(L , 1); /* msec */
+
+	Sleep(msec);
+
+    return 0;
+}
+#endif
+
+/** 
+ * @brief BytesConverter
+ *
+ * Convert a string of bytes to given number
+ *
+ * @see NXT_NUMBER_FORMAT 
+ *
+ * @par Lua Signature:
+ *      lnxt.core.BytesConverter( bytes , format )
+ * 
+ * @param L 
+ * 
+ * @return a lua number 
+ */
+static int BytesConverter( lua_State * L )
+{
+    size_t size;
+    const char * bytes;
+    unsigned int format = 10;
+    lua_Number value = 0;
+
+    bytes = luaL_checklstring( L , 1 , &size );
+    format = luaL_checkint( L , 2 );
+
+    if( size > 4 || format > 5 )
+    {
+        lua_pushnil( L );
+        lua_pushstring( L , "Number of bytes too big or wrong format!" );
+        return 2;
+    }
+
+    switch(format)
+    {
+        case NXT_UBYTE :
+            value = *((unsigned char*) bytes);
+            break;    
+        case NXT_SBYTE : 
+            value = *((char*)bytes);
+            break;    
+        case NXT_UWORD :
+            value = *((unsigned short*)bytes) ;
+            break;    
+        case NXT_SWORD :
+            value = *((short*)bytes) ;
+            break;    
+        case NXT_ULONG :
+            value = *((unsigned int*)bytes) ;
+            break;    
+        case NXT_SLONG :
+            value = *((int*)bytes) ; 
+            break;    
+        default:
+            value = 0;
+            break;    
+    }
+
+
+    lua_pushnumber( L , value );
+
+    return 1;
+}
+
+/** 
+ * @brief <b>C functions mapping to lua</b>
+ */
+static const luaL_reg funcs[] =
+{
+    { "StartProgram"           ,   StartProgram            }, 
+    { "StopProgram"            ,   StopProgram             }, 
+    { "PlaySoundFile"          ,   PlaySoundFile           }, 
+    { "PlayTone"               ,   PlayTone                }, 
+    { "SetOutputState"         ,   SetOutputState          }, 
+    { "SetInputMode"           ,   SetInputMode            }, 
+    { "GetOutputState"         ,   GetOutputState          }, 
+    { "GetInputValues"         ,   GetInputValues          },  
+    { "ResetInputScaledValue"  ,   ResetInputScaledValue   }, 
+    { "MessageWrite"           ,   MessageWrite            }, 
+    { "ResetMotorPosition"     ,   ResetMotorPosition      }, 
+    { "GetBatteryLevel"        ,   GetBatteryLevel         }, 
+    { "StopSoundPlayback"      ,   StopSoundPlayback       }, 
+    { "KeepAlive"              ,   KeepAlive               }, 
+    { "LsGetStatus"            ,   LsGetStatus             }, 
+    { "LsWrite"                ,   LsWrite                 },  
+    { "LsRead"                 ,   LsRead                  }, 
+    { "GetCurrentProgram"      ,   GetCurrentProgram       }, 
+    { "MessageRead"            ,   MessageRead             }, 
+    { "GetFirmwareVersion"     ,   GetFirmwareVersion      }, 
+    { "Boot"                   ,   Boot                    }, 
+    { "SetBrickName"           ,   SetBrickName            }, 
+    { "GetDeviceInfo"          ,   GetDeviceInfo           }, 
+    { "GetErrorMsg"            ,   GetErrorMsg             }, 
+    { "putBTHeader"            ,   putBTHeader             }, 
+    { "stripBTHeader"          ,   stripBTHeader           }, 
+    { "BytesConverter"         ,   BytesConverter          }, 
+    { "sleep"                  ,   lnxt_sleep              }, 
+    {  NULL                    ,   NULL                    }
+};
+
+/** 
+ * @brief <b>Initialize NXT the library</b>
+ * 
+ * @param L lua state
+ * 
+ * @return 
+ */
+LUALIB_API int luaopen_lnxt_core (lua_State *L)
+{
+    luaL_register(L, MYNAME, funcs);
+    lua_pushliteral(L,"version");		/** version */
+    lua_pushliteral(L,MYVERSION);
+    lua_settable(L,-3);
+
+    return 1;
+}
+

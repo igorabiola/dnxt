@@ -1,0 +1,82 @@
+<html>
+<head>
+<title>LuaTimer 2.0</title>
+</head>
+<body>
+<h1>LuaTimer 2.0</h1>
+<hr>
+
+<h2>Release Notes</h2>
+
+<ul>
+<li>Move almost all implementation from C to Lua. The C library only
+retrieves the time in microseconds;
+<li>Add Windows platform;
+<li>Use poll of timers.
+</ul>
+
+<hr>
+<h2>API</h2>
+
+<h3>luatimer.createpoll()</h3>
+<p>Create a new poll of timers.</p>
+
+<h3>poll:create(freq)</h3>
+<p>Create a new timer with frequence freq (in seconds). Use
+decimal numbers to precision in milli or microseconds.</p>
+
+<h3>poll:cancel(t)</h3>
+<p>Cancel the timer t, removing it from the poll. However, passing the
+string "all" to this function, all the timers in the poll are cancelled.
+</p>
+
+<h3>poll:size()</h3>
+<p>Return the number of timers in the poll.</p>
+
+<h3>poll:nextshot()</h3>
+<p>Return the remain among of time to the next timer expires. If some timer
+is already expired, the function returns 0 (zero).</p>
+
+<h3>poll:fired(t)</h3>
+<p>Return the timers that were expired. If t is the string "all", the
+function returns a table with all the expired timers. If t is a string
+"one", the function returns one of the expired timers. In the case that
+there is no expired times, fired() returns nil.</p>
+
+<hr>
+<h2>Exemplo</h2>
+<pre>
+require("luatimer")
+
+timers = luatimer.createpoll()
+
+t3 = timers:create(3)
+t5 = timers:create(5)
+t6 = timers:create(6)
+
+print("poll size", timers:size())
+
+print("Next shot: ", timers:nextshot())
+
+-- sleep(4 segundos)
+
+t = timers:fired("one")
+print(t)
+print(t == t3)
+
+timers:cancel(t3)
+
+print(timers:nextshot())
+
+-- sleep(3 segundos)
+
+tb = timers:fired("all")
+for k, t in ipairs(tb) do
+   print(t)
+end
+
+timers:cancel("all")
+</pre>
+<hr>
+</body>
+</html>
